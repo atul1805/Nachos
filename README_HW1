@@ -1,0 +1,64 @@
+1. Cyclic Barrier
+
+Demo file:	nachos/kernel/threads/CyclicBarrierDemo.java
+
+How to run:	Uncomment line 118 and comment line 117,119 and 120 in nachos/kernel/Nachos.java
+
+	if(options.THREAD_TEST) {
+		//ThreadTest.start();
+	    CyclicBarrierDemo.demo();
+	    //CyclicBarrier.demo(args);
+	    //TaskManagerDemo.demo();
+	}
+
+Arguments:	-d 1t -rs 3	
+
+Demo:		The demo finds maximum element in a 2d Array. A cyclic barrier is created with capacity equal to number of
+			rows in the matrix. Each thread calculates the maximum element in a row and once all threads reach the
+			barrier, barrier action is run. The barrier action simple finds the maximum in the set of results returned
+			by the threads.
+
+Another Demo
+
+How to run:	Uncomment line 119 and comment line 117,118 and 120 in nachos/kernel/Nachos.java
+
+	if(options.THREAD_TEST) {
+	    //ThreadTest.start();
+	    //CyclicBarrierDemo.demo();
+	    CyclicBarrier.demo(args);
+	    //TaskManagerDemo.demo();
+	}
+
+Arguments:	5 2 1 -d 1 -rs 3
+
+5 -> number of threads
+2 -> number of phases
+1 -> work per thread
+
+	The CyclicBarrier code implements the await functionality by using semaphores. One semaphore is used as a mutex
+	and one has been used to make the threads wait for other threads until the barrier breaks. One more semaphore 
+	has been used so that the exit of threads occurs in a synchronized way.
+	
+	
+	
+2. Task Manager
+
+Demo file:	nachos/kernel/threads/TaskManagerDemo.java
+
+How to run:	Uncomment line 120 and comment line 117,118 and 119 in nachos/kernel/Nachos.java
+
+	if(options.THREAD_TEST) {
+	    //ThreadTest.start();
+	    //CyclicBarrierDemo.demo();
+	    //CyclicBarrier.demo(args);
+	    TaskManagerDemo.demo();
+	}
+
+Arguments:	-d 1 -rs 3 or -d 1t -rs 3
+
+Demo:		The demo runs a parent thread and its 5 child threads(0-4). The parent executes tasks posted to it while
+			the child executes in background.The 3rd and 2nd child thread is cancelled.2nd child uses postRequest to
+			make parent run a task.
+			
+			The task manager code uses a combination of lock and condition to enable the parent thread to wait for
+			the child threads to complete and in the meanwhile execute any requests posted to it.

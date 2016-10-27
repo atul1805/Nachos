@@ -1,0 +1,7 @@
+#include "syscall.h"
+
+int main()
+{
+  Rmdir("/atul/jha");
+  Exit(0);
+}

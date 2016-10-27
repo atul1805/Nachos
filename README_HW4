@@ -1,0 +1,55 @@
+In order to create the Filesystem following changes were done:
+
+	FileSystemReal.java
+		boolean makeDir(String path, String name) -> creates directory of given name, e.g. path=/foo/bar, name=dir,
+													 so directory dir will be created inside /foo/bar
+		OpenFileReal openDir(String name)		  -> Returns a directory file of given name
+		String[] getPath(String name)			  -> Returns a array of string containing all the directory names
+													 if name=/foo/bar, result will be ["foo","bar"]
+		boolean rmDir(String path, String name)   -> removes directory of given name and path, similar to mkdir in
+													 arguments
+		list("/")								  -> lists all files and directories from root
+		
+	Directory.java
+		setTableSize(OpenFileReal file)			  -> for the given file, sets its tableSize to correct value and
+													 initializes table[] array.
+		int findDir(String name)				  -> returns index in table[] array of the given directory name
+		add(String name, int newSector, isDir)	  -> add new file/directory to table[] array, extends table[] size
+													 as required
+		list(String fullPath)					  -> recursively displays all file and directory name in a given path
+	
+	DirectoryEntry.java
+		one extra variable called isDir is introduced, so the total size of one entry is 19 bytes. internalize and
+		externalize methods have been changed accordingly.
+		
+	FileHeader.java
+		boolean extendHeader(freeMap, extraSectors, extraSize) -> This method extends the header by getting extraSectors
+																  number of sectors allocated for data.
+		
+	OpenFileReal.java
+		writeAt()								  			   -> calls extendHeader with extraSectors if the need arises, otherwise
+																  goes on usual with writing to the disk.
+
+
+		
+For the SystemCalls:
+	ExceptionHandler.java						  -> Entries for both mkdir and rmdir have been added.
+	Syscall.java								  -> mkdir(String path)
+												  -> rmdir(String path) have been added.
+	ProgTest.java
+		copy(String from, String to)			  -> This method copies the given C code to Nachos filesystem(FileSystemReal one).
+													 So that it is able to find and execute it.
+
+
+
+Test Files:
+	test/mkTest.c -> for mkdir	to run   1 100 -d f -f -x test/mkTest
+	test/rmTest.c -> for rmdir  to run   1 100 -d f -x test/rmTest
+	
+	mkdir and rmdir assumes that paths start with "/". for e.g. Mkdir("/foo/bar")
+	
+	FileSystemTest.java -> for checking extending the filesize working
+	
+What's working:
+	Extending fileSize -> Works
+	Multiple Directories and Unix PathNames -> Works

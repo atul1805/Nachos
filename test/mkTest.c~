@@ -1,0 +1,11 @@
+#include "syscall.h"
+
+int main()
+{
+  Mkdir("/atul");
+  Mkdir("/atul/jha");
+  Mkdir("/atul/jha/major");
+  Mkdir("/atul/jha/major/is");
+  Mkdir("/atul/jha/major/is/CS");
+  Exit(0);
+}

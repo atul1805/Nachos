@@ -1,0 +1,68 @@
+Sleep System Call: It waits on a semaphore and that semaphore is released when the TimerInterruptHandler releases it
+				   at appropriate time.
+
+Scheduler:
+
+First two arguments passed to nachos are number of queues and quantum of highest priority queue.
+
+	ROUND ROBIN:
+
+		To run: 1 1000 -d -x test/ForkTest -ncpu 2 -ps
+
+	MULTILEVEL FEEDBACK SCHEDULER:
+
+		To run: 4 200 -d -x test/ForkTest -ncpu 2 -ps
+
+		In order to implement multilevel feedback scheduler the following supporting class was created
+		extendedNachosThread: A new class for creating new Threads with extra attributes like
+			semSleep     -> Semaphore for sleeping threads
+    		waitTicks    -> Stores how much a thread has to sleep
+    		quantum      -> Quantum of a thread
+    		currCPUBurst -> Current CPU BURST of thread
+            avgCPUBurst  -> Average CPU BURST of thread
+
+		Scheduler has following attributes and methods:
+
+			queues             -> A list of queues of threads
+			quantums           -> Stores quantums for each priority level.
+			numCPU100Ticks     -> hashmap to keep track of number of 100 ticks gone by for a given CPU
+			cpuToThread        -> hashmap to map which cpu is running which thread
+			sleepingThreads    -> list maintaining the sleeping threads
+			sleepingThreadsCPU -> list maintaining the last CPU used by sleeping threads
+
+		The constructor creates a list of queues of threads and initializes the quantum for each queue. It also
+		dispatches the firstThread on the CPU.
+
+		makeReady -> Gets the avgCPUBurst and adds the thread to the queue which has its quantum >= avgCPUBurst of
+					 thread.
+		setAvgCPUBurst -> Calculates the avgCPUBurst of the thread.
+
+		In finishThread the numCPU100Ticks is reset for the current CPU.
+
+		TimerInterruptHandler: Increments the numCPU100Ticks for current CPU. If numCPU100Ticks*100 is a multiple of
+							   currentThreads quantum, it yield the thread. It also checks all the sleeping threads
+							   and releases its semaphore if its their time to wake up.
+		
+		As the threads are not able to finish in given quantum, they are put in lower priority queues with higher
+		quantum. I/O bound threads which can be simulated via sleep have lower avgCPUBurst and hence stay on same
+		queue. Hence I/O bound tasks or tasks with short CPU bursts will scheduled quickly in multifeedback than in
+		roundrobin.
+		
+		
+Console Driver:
+
+	Test Program executed: test/read1.c
+
+	getChar()    - > If getCharBuf is empty, waits on charAvail semaphore. charAvail semaphore is released when new
+					 line entered.
+					 
+	putChar()     -> If console is busy, adds characters to putCharBuf else prints the charcter to console.
+	
+	InputHandler  -> When new character is entered, it reads and processes it according to the rules and. The processed
+					 characters are added to echoBuf for display and getCharBuf. The console is set to busy when any
+                	 character is being displayed. If newline is added it activates the charAvail semaphore.
+	
+	OutputHandler -> If putChar buffer and echo buffer are non-empty, it displays them. When both the buffers are empty,
+                 	 sets the console to idle.
+                 
+	To run: 1 100 -d t -x test/read1 -ncpu 2 -ps

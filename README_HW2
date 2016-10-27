@@ -1,0 +1,107 @@
+In order to implement Exec(), Fork(), Exit(), Join(), and Yield() system calls the following supporting classes were built.
+
+PhysicalMemoryManager:
+
+	Its objective is to manage the physical page numbers.
+	getFreePage()	 -> returns the available physical pagenumber.
+	setPageFree(int) -> sets the particular page to be free and can be used again
+
+	Synchronization has been done using Locks for the shared data.
+
+ProcessManager:
+
+	Its objective is to generate new pid's for the processes and hold few data structures containing information across
+	processes.
+
+	getNextpid()	  -> returns a new pid.
+	getCurrentSpace() -> returns the current AddressSpace for the process.
+	
+ 	HashMap<Integer, AddrSpace> processTable         -> Maps process_id to AddressSpace
+    HashMap<Integer, LinkedList<Integer>> waitingPID -> holds all the waiting process_id's for a given process_id
+    HashMap<Integer, Integer> exitStatus 			 -> holds exit status for a given process_id
+    
+After this I implemented the AddrSpace class.
+
+	getPhysicalAddress(int) 	-> returns corresponding physical address for a given virtual address
+	copyinString(int) 			-> returns a string copied from a given virtual address in machines memory.
+	copyinByte(int,int) 		-> returns a byte buffer of given length contaning data from a given virtual address in machines memory.
+	copyoutByte(int,byte[],int) -> returns number of bytes copied from a buffer to a given virtual address in machines memory.
+	newPageTable() 				-> For a given AddrSpace object, it creates a new pageTable with code and data segment remaining same, but 
+								   creates a new user stack.
+
+	pageTable  	   -> pageTable mapping vpn to ppn
+    pid		   	   -> process_id
+    numThreads 	   -> number of Threads in process
+    semJoin    	   -> semaphore to be used by join
+    runningProcess -> number of processes running
+
+
+System Calls Implementation:
+
+Exec:
+		1) Gets virtual address of filename to be executed from register number 4.
+		2) Uses copyinString to get the actual string from the virtual address.
+		3) Exec system call is made from ExceptionHandler using the filename found above.
+		4) Exec creates a new AddrSpace object. Creates a runnable for the new thread to be created.
+		5) Creates a new thread and runs with the above runnable.
+		6) Returns process_id.
+Fork:
+		1) Accepts function pointer as an argument.
+		2) Creates a new AddrSpace object with code and data same as that of parent process, but with different user stack.
+		3) Increments the number of threads.
+		4) Updates the processTable Hashmap with current forked process_id.
+		5) Creates runnable for the new thread to be created with PCReg set to the function pointer and NextPCReg set to function pointer + 4.
+		6) Creates a new thread and runs with the above runnable.
+				
+Exit:
+		1) Status is passed and system call for exit is made.
+		2) Gets the current AddrSpace object.
+		3) If the current space has one thread, it sets all the physical pages in the pageTable free using setPageFree(int).
+		4) If the current space has more than one thread, it only sets the user stacks physical pages in the pageTable free using setPageFree(int).
+		5) If there is only one process running, i.e progtest, stops the console.
+		6) Sets the exit status of current process exiting.
+		7) Releases semaphore for the all the processes waiting for the current one(using join).
+		8) Finishes the thread.
+		
+Join:
+		1) Takes process_id as argument.(process to be waited for)
+		2) Adds the current pid in the waitingPID hashmap, corresponding to the input pid.
+		3) If the process to be waited has already exited, does'nt wait for it or else waits until that process exits.
+		4) Returns the exit status of the process it was waiting for.
+
+Yield:
+		1) It yields the current thread.
+
+Read:
+		1) Takes 3 arguments, the virtual address of the buffer to which data should be written, length of data and
+		fileID as consoleInput.
+		2) Reads data from the console to the buffer.
+		3) Uses copyoutByte(int,byte[],int) to copy data from buffer to memory.
+		4) Returns number of bytes read.
+
+Write:
+		1) Uses copyinByte to copy data from a given virtual address to a buffer.
+		2) Takes 3 arguments, the buffer, length of data and fileID as consoleOutput.
+		3) One by one writes data onto the console.
+		
+The console window once opened, closes only when there are no more running processes.
+
+Test Programs:
+
+All Test Programs are in test/ directory
+
+test1.c		-> displays numbers from 5 to 1
+test2.c 	-> displays numbers from 1 to 5
+ExecTest.c	-> executes test1 and test2
+ForkTest.c 	-> forks two functions similar in logic to test1 and test2
+JoinTest.c	-> Executes test1 and calls a join, executes test2 and calls a join
+write1.c	-> writes a string of length 5 and 9 on the consoleOutput
+write2.c	-> writes a single character to the consoleOutput
+read1.c		-> Reads 25 characters from consoleInput and writes it to consoleOutput
+console1.c	-> does similar work as read1.c
+shell.c 	-> can read upto 60 characters from consoleInput. Stops reading when newline in entered. If the first four characters read were 
+			   e,x,i,t , the program exits. Otherwise executes the code having those 4 characters as filename and calls join on it.
+		   
+To run test Programs:
+
+in Eclipse provide these arguments: -d -x test/ExecTest -ncpu 2
